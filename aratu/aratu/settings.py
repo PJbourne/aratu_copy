@@ -26,6 +26,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+
+LOGIN_REDIRECT_URL = '/'  # Redireciona para a página inicial após o login
+LOGOUT_REDIRECT_URL = '/'  # Redireciona para a página inicial após o logout
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -80,14 +84,17 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'auditlog.middleware.AuditlogMiddleware'
 ]
 
 ROOT_URLCONF = 'aratu.urls'
 
+import os
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -152,3 +159,17 @@ STATIC_ROOT = BASE_DIR / 'static'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
+
+# settings.py
+
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    'aggregate-json-files-every-minute': {
+        'task': 'sensor.tasks.aggregate_json_files',
+        'schedule': crontab(minute='*'),  # Every minute
+    },
+}
